@@ -17,6 +17,8 @@ export default class ReversiDisplay extends Vue {
   side = 8;
   reversi = new Reversi(8);
 
+  color: 'black' | 'white' = 'black';
+
   // Reversi canvas arg
   columnSide = 48;
   padding = 64;
@@ -26,6 +28,12 @@ export default class ReversiDisplay extends Vue {
   canvasWindowSide = 100;
 
   context: CanvasRenderingContext2D | null = null;
+
+  created() {
+    this.reversi.registerFinishedCallback(() => {
+      console.log('finish');
+    });
+  }
 
   mounted() {
     window.addEventListener('resize', () => {
@@ -171,8 +179,14 @@ export default class ReversiDisplay extends Vue {
     const y = Math.floor((e.clientY - rect.top - this.gapY) / this.columnSide);
 
     if (x >= 0 && x < this.side && y >= 0 && y < this.side) {
-      this.reversi.setPeace('black', x, y);
-      this.draw();
+      if (this.reversi.setPeace(this.color, x, y)) {
+        this.draw();
+        this.color = this.color === 'black' ? 'white' : 'black';
+
+        if (this.reversi.settableList(this.color).length === 0) {
+          this.color = this.color === 'black' ? 'white' : 'black';
+        }
+      }
     }
   }
 }

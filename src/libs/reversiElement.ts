@@ -1,10 +1,13 @@
 export interface ReversiElement {
   state: 'none' | 'black' | 'white';
   dropedTurn?: number;
+  stateHistory: ReversiElement[];
+  turned?: boolean;
 }
 
 export const none: ReversiElement = {
   state: 'none',
+  stateHistory: [],
 };
 
 export class ReversiBoard {
@@ -24,10 +27,10 @@ export class ReversiBoard {
       () => new Array(this.side).fill(none)
     );
     const centerd = Math.floor(this.side / 2);
-    board[centerd - 1][centerd - 1] = { state: 'black' };
-    board[centerd - 1][centerd] = { state: 'white' };
-    board[centerd][centerd - 1] = { state: 'white' };
-    board[centerd][centerd] = { state: 'black' };
+    board[centerd - 1][centerd - 1] = { state: 'black', stateHistory: [] };
+    board[centerd - 1][centerd] = { state: 'white', stateHistory: [] };
+    board[centerd][centerd - 1] = { state: 'white', stateHistory: [] };
+    board[centerd][centerd] = { state: 'black', stateHistory: [] };
 
     return board;
   }
