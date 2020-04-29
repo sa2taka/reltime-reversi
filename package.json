@@ -6,7 +6,8 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "format": "./node_modules/.bin/prettier -c '**/*.vue' '**/*.ts' '**/*.js' --ignore-path .gitignore & npm run lint"
   },
   "dependencies": {
     "core-js": "^3.6.4",

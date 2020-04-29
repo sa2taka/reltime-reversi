@@ -7,25 +7,25 @@ export const none: ReversiElement = {
   state: 'none',
 };
 
-export class Board extends Array<Array<ReversiElement>> {
-  public value: ReversiElement[][];
+export class ReversiBoard {
+  private _value: ReversiElement[][];
 
   constructor(private side: number, private board?: ReversiElement[][]) {
-    super();
     if (board) {
-      this.value = board;
+      this._value = board;
     } else {
-      this.value = this.initialBoard;
+      this._value = this.initialBoard;
     }
   }
 
   private get initialBoard() {
-    const board: Array<Array<ReversiElement>> = new Array(this.side).map(() =>
-      new Array(this.side).fill(none)
+    const board: Array<Array<ReversiElement>> = Array.from(
+      new Array(this.side),
+      () => new Array(this.side).fill(none)
     );
-    const centerd = this.side / 2;
-    board[centerd - 1][centerd - 1] = { state: 'white' };
-    board[centerd - 1][centerd] = { state: 'black' };
+    const centerd = Math.floor(this.side / 2);
+    board[centerd - 1][centerd - 1] = { state: 'black' };
+    board[centerd - 1][centerd] = { state: 'white' };
     board[centerd][centerd - 1] = { state: 'white' };
     board[centerd][centerd] = { state: 'black' };
 
@@ -33,20 +33,25 @@ export class Board extends Array<Array<ReversiElement>> {
   }
 
   public copy() {
-    const newBoard: Array<Array<ReversiElement>> = new Array(
-      this.side
-    ).map(() => new Array(this.side).fill(none));
+    const newBoard: Array<Array<ReversiElement>> = Array.from(
+      new Array(this.side),
+      () => new Array(this.side).fill(none)
+    );
 
-    this.forEach((row, y) => {
+    this._value.forEach((row, y) => {
       row.forEach((elm, x) => {
         newBoard[y][x] = Object.assign(elm);
       });
     });
 
-    return new Board(this.side, newBoard);
+    return new ReversiBoard(this.side, newBoard);
   }
 
-  public get [Symbol.species]() {
-    return this.value;
+  public set(elem: ReversiElement, x: number, y: number) {
+    this._value[y][x] = elem;
+  }
+
+  public get value() {
+    return this._value;
   }
 }
