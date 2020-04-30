@@ -16,8 +16,11 @@ export default class ReversiDisplay extends Vue {
   input = '8';
   side = 8;
   reversi = new Reversi(8);
-
   color: 'black' | 'white' = 'black';
+
+  isDragging = false;
+  draggingStartX = 0;
+  draggingStartY = 0;
 
   // Reversi canvas arg
   columnSide = 48;
@@ -44,6 +47,9 @@ export default class ReversiDisplay extends Vue {
       'reversi-board'
     ) as HTMLCanvasElement;
     canvas.addEventListener('click', this.handleCanvasClick);
+    canvas.addEventListener('mousedown', this.handleMouseDown);
+    canvas.addEventListener('mouseup', this.handleMouseUp);
+    canvas.addEventListener('mousemove', this.handleDrag);
     this.context = canvas.getContext('2d');
 
     // draw and window
@@ -75,6 +81,32 @@ export default class ReversiDisplay extends Vue {
     canvas.height = this.canvasWindowSide;
   }
 
+  handleDrag(event: MouseEvent) {
+    if (!this.isDragging) {
+      return;
+    }
+
+    const diffX = event.offsetX - this.draggingStartX;
+    const diffY = event.offsetY - this.draggingStartY;
+
+    this.draggingStartX = event.offsetX;
+    this.draggingStartY = event.offsetY;
+
+    this.gapX += diffX;
+    this.gapY += diffY;
+    this.draw();
+  }
+
+  handleMouseDown(event: MouseEvent) {
+    this.isDragging = true;
+    this.draggingStartX = event.offsetX;
+    this.draggingStartY = event.offsetY;
+  }
+
+  handleMouseUp(event: MouseEvent) {
+    this.isDragging = false;
+  }
+
   initialGap() {
     const side = this.columnSide * this.side;
     this.gapX = (this.canvasWindowSide - side) / 2;
@@ -91,15 +123,16 @@ export default class ReversiDisplay extends Vue {
   }
 
   drawCenter() {
+    const boardSide = this.side * this.columnSide;
     this.context!.beginPath();
-    this.context!.moveTo(this.canvasWindowSide / 2, 0);
-    this.context!.lineTo(this.canvasWindowSide / 2, this.canvasWindowSide);
+    this.context!.moveTo(this.gapX + boardSide / 2, 0);
+    this.context!.lineTo(this.gapX + boardSide / 2, this.canvasWindowSide);
     this.context!.lineWidth = 3;
     this.context!.stroke();
 
     this.context!.beginPath();
-    this.context!.moveTo(0, this.canvasWindowSide / 2);
-    this.context!.lineTo(this.canvasWindowSide, this.canvasWindowSide / 2);
+    this.context!.moveTo(0, this.gapY + boardSide / 2);
+    this.context!.lineTo(this.canvasWindowSide, this.gapY + boardSide / 2);
     this.context!.lineWidth = 3;
     this.context!.stroke();
   }
