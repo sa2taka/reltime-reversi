@@ -1,6 +1,6 @@
 import { ReversiBoard, ReversiElement } from './reversiElement';
 
-interface Cell {
+export interface Cell {
   x: number;
   y: number;
 }

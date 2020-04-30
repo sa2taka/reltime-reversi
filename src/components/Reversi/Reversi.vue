@@ -10,6 +10,8 @@
 import { Vue, Component } from 'vue-property-decorator';
 import Reversi from '@/libs/reversi';
 import { ReversiElement } from '@/libs/reversiElement';
+import { ReversiCPU } from '@/libs/reversiCPU';
+import BeginnerCPU from '@/libs/beginnerCPU';
 
 @Component
 export default class ReversiDisplay extends Vue {
@@ -17,10 +19,14 @@ export default class ReversiDisplay extends Vue {
   side = 8;
   reversi = new Reversi(8);
   color: 'black' | 'white' = 'black';
+  opponent!: ReversiCPU;
 
   isDragging = false;
+  isDragged = false;
   draggingStartX = 0;
   draggingStartY = 0;
+  draggingDistance = 0;
+  deemStoppingThreshold = 10;
 
   // Reversi canvas arg
   columnSide = 48;
@@ -36,6 +42,7 @@ export default class ReversiDisplay extends Vue {
     this.reversi.registerFinishedCallback(() => {
       console.log('finish');
     });
+    this.initialCPU();
   }
 
   mounted() {
@@ -52,7 +59,6 @@ export default class ReversiDisplay extends Vue {
     canvas.addEventListener('mousemove', this.handleDrag);
     this.context = canvas.getContext('2d');
 
-    // draw and window
     this.handleWindowSize();
     this.initialGap();
     this.draw();
@@ -64,53 +70,19 @@ export default class ReversiDisplay extends Vue {
       this.reversi = new Reversi(numSide);
       this.side = numSide;
       this.initialGap();
+      this.initialCPU();
       this.draw();
     }
-  }
-
-  handleWindowSize() {
-    this.canvasWindowSide =
-      window.innerWidth > window.innerHeight * 0.8
-        ? window.innerHeight * 0.8
-        : window.innerWidth;
-
-    const canvas = document.getElementById(
-      'reversi-board'
-    ) as HTMLCanvasElement;
-    canvas.width = this.canvasWindowSide;
-    canvas.height = this.canvasWindowSide;
-  }
-
-  handleDrag(event: MouseEvent) {
-    if (!this.isDragging) {
-      return;
-    }
-
-    const diffX = event.offsetX - this.draggingStartX;
-    const diffY = event.offsetY - this.draggingStartY;
-
-    this.draggingStartX = event.offsetX;
-    this.draggingStartY = event.offsetY;
-
-    this.gapX += diffX;
-    this.gapY += diffY;
-    this.draw();
-  }
-
-  handleMouseDown(event: MouseEvent) {
-    this.isDragging = true;
-    this.draggingStartX = event.offsetX;
-    this.draggingStartY = event.offsetY;
-  }
-
-  handleMouseUp(event: MouseEvent) {
-    this.isDragging = false;
   }
 
   initialGap() {
     const side = this.columnSide * this.side;
     this.gapX = (this.canvasWindowSide - side) / 2;
     this.gapY = (this.canvasWindowSide - side) / 2;
+  }
+
+  initialCPU() {
+    this.opponent = new BeginnerCPU(this.reversi, 'white');
   }
 
   draw() {
@@ -204,9 +176,26 @@ export default class ReversiDisplay extends Vue {
     this.context!.fill();
   }
 
+  attackFromCPU() {
+    const next = this.opponent.next();
+    this.reversi.setPeace(this.opponent.color, next.x, next.y);
+    this.draw();
+
+    if (this.isPass(this.opponent.color === 'black' ? 'white' : 'black')) {
+      this.attackFromCPU();
+    }
+  }
+
+  isPass(color: 'white' | 'black') {
+    return this.reversi.settableList(color).length === 0;
+  }
+
   // event listner
 
   handleCanvasClick(e: MouseEvent) {
+    if (this.draggingDistance > this.deemStoppingThreshold) {
+      return;
+    }
     const rect = (e.target! as Element).getBoundingClientRect();
     const x = Math.floor((e.clientX - rect.left - this.gapX) / this.columnSide);
     const y = Math.floor((e.clientY - rect.top - this.gapY) / this.columnSide);
@@ -214,13 +203,56 @@ export default class ReversiDisplay extends Vue {
     if (x >= 0 && x < this.side && y >= 0 && y < this.side) {
       if (this.reversi.setPeace(this.color, x, y)) {
         this.draw();
-        this.color = this.color === 'black' ? 'white' : 'black';
 
-        if (this.reversi.settableList(this.color).length === 0) {
-          this.color = this.color === 'black' ? 'white' : 'black';
+        if (!this.isPass(this.color === 'black' ? 'white' : 'black')) {
+          this.attackFromCPU();
         }
       }
     }
+  }
+
+  handleWindowSize() {
+    this.canvasWindowSide =
+      window.innerWidth > window.innerHeight * 0.8
+        ? window.innerHeight * 0.8
+        : window.innerWidth;
+
+    const canvas = document.getElementById(
+      'reversi-board'
+    ) as HTMLCanvasElement;
+    canvas.width = this.canvasWindowSide;
+    canvas.height = this.canvasWindowSide;
+  }
+
+  handleDrag(event: MouseEvent) {
+    if (!this.isDragging) {
+      return;
+    }
+
+    this.isDragged = true;
+
+    const diffX = event.offsetX - this.draggingStartX;
+    const diffY = event.offsetY - this.draggingStartY;
+
+    this.draggingStartX = event.offsetX;
+    this.draggingStartY = event.offsetY;
+
+    this.gapX += diffX;
+    this.gapY += diffY;
+
+    this.draggingDistance += Math.sqrt(diffX ** 2 + diffY ** 2);
+    this.draw();
+  }
+
+  handleMouseDown(event: MouseEvent) {
+    this.isDragging = true;
+    this.draggingStartX = event.offsetX;
+    this.draggingStartY = event.offsetY;
+    this.draggingDistance = 0;
+  }
+
+  handleMouseUp(event: MouseEvent) {
+    this.isDragging = false;
   }
 }
 </script>
